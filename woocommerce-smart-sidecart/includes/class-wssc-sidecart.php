@@ -194,7 +194,7 @@ class WSSC_SideCart {
     public function add_bulk_modal() {
         ?>
         <!-- Bulk Buy Modal -->
-        <div id="wssc-bulk-modal" class="wssc-modal" style="display: none;">
+        <div id="wssc-bulk-modal" class="wssc-modal" style="display: none !important;">
             <div class="wssc-box">
                 <h3>Request Bulk Purchase</h3>
                 <form id="wssc-bulk-form">
@@ -217,7 +217,7 @@ class WSSC_SideCart {
                     
                     <div style="margin-top: 15px;">
                         <button type="submit" class="button">Submit Request</button>
-                        <button type="button" class="button" onclick="document.getElementById('wssc-bulk-modal').style.display='none'">Cancel</button>
+                        <button type="button" class="button wssc-cancel-bulk">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -230,7 +230,30 @@ class WSSC_SideCart {
                 e.preventDefault();
                 var productId = $(this).data('product');
                 $('#bulk-product-id').val(productId);
-                $('#wssc-bulk-modal').show();
+                $('#wssc-bulk-modal').show().css('display', 'flex');
+            });
+            
+            // Handle cancel button click
+            $(document).on('click', '.wssc-cancel-bulk', function(e) {
+                e.preventDefault();
+                $('#wssc-bulk-modal').hide().css('display', 'none');
+                $('#wssc-bulk-form')[0].reset();
+            });
+            
+            // Close modal when clicking outside
+            $(document).on('click', '#wssc-bulk-modal', function(e) {
+                if (e.target === this) {
+                    $(this).hide().css('display', 'none');
+                    $('#wssc-bulk-form')[0].reset();
+                }
+            });
+            
+            // Close modal with Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && $('#wssc-bulk-modal').is(':visible')) {
+                    $('#wssc-bulk-modal').hide().css('display', 'none');
+                    $('#wssc-bulk-form')[0].reset();
+                }
             });
             
             // Handle bulk form submission
@@ -248,6 +271,11 @@ class WSSC_SideCart {
                     nonce: '<?php echo wp_create_nonce('wssc_nonce'); ?>'
                 };
                 
+                // Disable submit button during request
+                var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.text();
+                submitBtn.prop('disabled', true).text('Submitting...');
+                
                 $.ajax({
                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
                     type: 'POST',
@@ -255,7 +283,7 @@ class WSSC_SideCart {
                     success: function(response) {
                         if (response.success) {
                             showToast('✅ ' + response.data.message, 'success');
-                            $('#wssc-bulk-modal').hide();
+                            $('#wssc-bulk-modal').hide().css('display', 'none');
                             $('#wssc-bulk-form')[0].reset();
                         } else {
                             showToast('❌ ' + response.data, 'error');
@@ -263,6 +291,10 @@ class WSSC_SideCart {
                     },
                     error: function() {
                         showToast('❌ Error submitting request', 'error');
+                    },
+                    complete: function() {
+                        // Re-enable submit button
+                        submitBtn.prop('disabled', false).text(originalText);
                     }
                 });
             });

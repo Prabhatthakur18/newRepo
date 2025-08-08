@@ -7,6 +7,8 @@ class WSSC_Mobile_Admin {
     public function __construct() {
         add_action('admin_menu', [$this, 'add_menu']);
         add_action('admin_post_wssc_upload_mobile_csv', [$this, 'handle_mobile_csv']);
+        add_action('admin_post_wssc_upload_brands_csv', [$this, 'handle_brands_csv']);
+        add_action('admin_post_wssc_upload_models_csv', [$this, 'handle_models_csv']);
         add_action('admin_post_wssc_add_brand', [$this, 'handle_add_brand']);
         add_action('admin_post_wssc_add_model', [$this, 'handle_add_model']);
         add_action('admin_post_wssc_delete_brand', [$this, 'handle_delete_brand']);
@@ -24,8 +26,8 @@ class WSSC_Mobile_Admin {
     public function add_menu() {
         add_submenu_page(
             'wssc-settings', 
-            'Mobile Brands & Models Management', 
             'Mobile Selector', 
+            'Mobile Selector',
             'manage_options', 
             'wssc-mobile-selector', 
             [$this, 'mobile_page']
@@ -52,29 +54,78 @@ class WSSC_Mobile_Admin {
             <!-- CSV Upload Section -->
             <div class="wssc-upload-section">
                 <h3>📁 Upload CSV File</h3>
-                <p>Upload a CSV file with brands and models. Format: <code>Brand Name, Model Name</code></p>
+                <p>Upload CSV files for brands and models. Use the format from your sample files:</p>
                 <ol>
-                    <li><strong>Column 1:</strong> Brand Name (e.g., Samsung, Apple, OnePlus)</li>
-                    <li><strong>Column 2:</strong> Model Name (e.g., Galaxy S21, iPhone 13, OnePlus 9)</li>
+                    <li><strong>Brands CSV:</strong> id, brand_name (e.g., 1, Samsung)</li>
+                    <li><strong>Models CSV:</strong> id, brand_id, model_name (e.g., 1, 1, Samsung S8)</li>
                 </ol>
                 
-                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" class="wssc-upload-form">
-                    <input type="hidden" name="action" value="wssc_upload_mobile_csv">
-                    <?php wp_nonce_field('wssc_mobile_csv', 'wssc_mobile_nonce'); ?>
-                    
-                    <div class="upload-area">
-                        <input type="file" name="wssc_mobile_csv" id="wssc_mobile_csv" required accept=".csv" class="file-input">
-                        <label for="wssc_mobile_csv" class="file-label">
-                            <span class="file-icon">📁</span>
-                            <span class="file-text">Choose CSV File</span>
-                        </label>
-                    </div>
-                    
-                    <button type="submit" class="button button-primary button-large">
-                        <span class="upload-icon">⬆️</span>
-                        Upload CSV
-                    </button>
-                </form>
+                <!-- Brands CSV Upload -->
+                <div style="margin-bottom: 20px;">
+                    <h4>📱 Upload Brands CSV</h4>
+                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" class="wssc-upload-form">
+                        <input type="hidden" name="action" value="wssc_upload_brands_csv">
+                        <?php wp_nonce_field('wssc_brands_csv', 'wssc_brands_nonce'); ?>
+                        
+                        <div class="upload-area">
+                            <input type="file" name="wssc_brands_csv" id="wssc_brands_csv" required accept=".csv" class="file-input">
+                            <label for="wssc_brands_csv" class="file-label">
+                                <span class="file-icon">📁</span>
+                                <span class="file-text">Choose Brands CSV File</span>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="button button-primary button-large">
+                            <span class="upload-icon">⬆️</span>
+                            Upload Brands CSV
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Models CSV Upload -->
+                <div style="margin-bottom: 20px;">
+                    <h4>📱 Upload Models CSV</h4>
+                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" class="wssc-upload-form">
+                        <input type="hidden" name="action" value="wssc_upload_models_csv">
+                        <?php wp_nonce_field('wssc_models_csv', 'wssc_models_nonce'); ?>
+                        
+                        <div class="upload-area">
+                            <input type="file" name="wssc_models_csv" id="wssc_models_csv" required accept=".csv" class="file-input">
+                            <label for="wssc_models_csv" class="file-label">
+                                <span class="file-icon">📁</span>
+                                <span class="file-text">Choose Models CSV File</span>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="button button-primary button-large">
+                            <span class="upload-icon">⬆️</span>
+                            Upload Models CSV
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Combined Upload (Legacy) -->
+                <div style="border-top: 1px solid #ddd; padding-top: 20px;">
+                    <h4>📱 Upload Combined CSV (Legacy Format)</h4>
+                    <p>Upload a single CSV with format: Brand Name, Model Name</p>
+                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" class="wssc-upload-form">
+                        <input type="hidden" name="action" value="wssc_upload_mobile_csv">
+                        <?php wp_nonce_field('wssc_mobile_csv', 'wssc_mobile_nonce'); ?>
+                        
+                        <div class="upload-area">
+                            <input type="file" name="wssc_mobile_csv" id="wssc_mobile_csv" required accept=".csv" class="file-input">
+                            <label for="wssc_mobile_csv" class="file-label">
+                                <span class="file-icon">📁</span>
+                                <span class="file-text">Choose Combined CSV File</span>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="button button-primary button-large">
+                            <span class="upload-icon">⬆️</span>
+                            Upload Combined CSV
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <!-- Manual Add Section -->
@@ -232,6 +283,137 @@ class WSSC_Mobile_Admin {
             $redirect_url .= '&success=1&message=' . urlencode($message);
         } else {
             $redirect_url .= '&error=1&message=' . urlencode('Failed to process CSV file');
+        }
+
+        wp_redirect($redirect_url);
+        exit;
+    }
+
+    public function handle_brands_csv() {
+        if (!isset($_POST['wssc_brands_nonce']) || !wp_verify_nonce($_POST['wssc_brands_nonce'], 'wssc_brands_csv')) {
+            wp_die('Invalid nonce');
+        }
+
+        $success = false;
+        $message = '';
+        $brands_added = 0;
+
+        if (!empty($_FILES['wssc_brands_csv']['tmp_name'])) {
+            $file = fopen($_FILES['wssc_brands_csv']['tmp_name'], 'r');
+
+            if ($file) {
+                global $wpdb;
+                $brand_table = $wpdb->prefix . 'wssc_mobile_brands';
+
+                // Skip header row
+                $header = fgetcsv($file);
+
+                while (($row = fgetcsv($file)) !== false) {
+                    if (count($row) >= 2) {
+                        $brand_id = intval($row[0]);
+                        $brand_name = trim($row[1]);
+
+                        if (!empty($brand_name)) {
+                            // Check if brand already exists
+                            $existing = $wpdb->get_var($wpdb->prepare(
+                                "SELECT id FROM $brand_table WHERE brand_name = %s", 
+                                $brand_name
+                            ));
+
+                            if (!$existing) {
+                                $result = $wpdb->insert($brand_table, ['brand_name' => $brand_name]);
+                                if ($result) {
+                                    $brands_added++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                fclose($file);
+                $success = true;
+                $message = "Added $brands_added brands successfully!";
+            }
+        }
+
+        // Redirect with result
+        $redirect_url = admin_url('admin.php?page=wssc-mobile-selector');
+        if ($success) {
+            $redirect_url .= '&success=1&message=' . urlencode($message);
+        } else {
+            $redirect_url .= '&error=1&message=' . urlencode('Failed to process brands CSV file');
+        }
+
+        wp_redirect($redirect_url);
+        exit;
+    }
+
+    public function handle_models_csv() {
+        if (!isset($_POST['wssc_models_nonce']) || !wp_verify_nonce($_POST['wssc_models_nonce'], 'wssc_models_csv')) {
+            wp_die('Invalid nonce');
+        }
+
+        $success = false;
+        $message = '';
+        $models_added = 0;
+
+        if (!empty($_FILES['wssc_models_csv']['tmp_name'])) {
+            $file = fopen($_FILES['wssc_models_csv']['tmp_name'], 'r');
+
+            if ($file) {
+                global $wpdb;
+                $brand_table = $wpdb->prefix . 'wssc_mobile_brands';
+                $model_table = $wpdb->prefix . 'wssc_mobile_models';
+
+                // Skip header row
+                $header = fgetcsv($file);
+
+                while (($row = fgetcsv($file)) !== false) {
+                    if (count($row) >= 3) {
+                        $model_id = intval($row[0]);
+                        $brand_id = intval($row[1]);
+                        $model_name = trim($row[2]);
+
+                        if ($brand_id > 0 && !empty($model_name)) {
+                            // Check if brand exists
+                            $brand_exists = $wpdb->get_var($wpdb->prepare(
+                                "SELECT id FROM $brand_table WHERE id = %d", 
+                                $brand_id
+                            ));
+
+                            if ($brand_exists) {
+                                // Check if model already exists
+                                $existing_model = $wpdb->get_var($wpdb->prepare(
+                                    "SELECT id FROM $model_table WHERE brand_id = %d AND model_name = %s", 
+                                    $brand_id, $model_name
+                                ));
+
+                                if (!$existing_model) {
+                                    $result = $wpdb->insert($model_table, [
+                                        'brand_id' => $brand_id,
+                                        'model_name' => $model_name
+                                    ]);
+                                    if ($result) {
+                                        $models_added++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                fclose($file);
+                $success = true;
+                $message = "Added $models_added models successfully!";
+            }
+        }
+
+        // Redirect with result
+        $redirect_url = admin_url('admin.php?page=wssc-mobile-selector');
+        if ($success) {
+            $redirect_url .= '&success=1&message=' . urlencode($message);
+        } else {
+            $redirect_url .= '&error=1&message=' . urlencode('Failed to process models CSV file');
         }
 
         wp_redirect($redirect_url);

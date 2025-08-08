@@ -44,10 +44,10 @@ class WSSC_Plugin {
         $wssc_mobile_selector = new WSSC_Mobile_Selector();
         
         // Initialize other classes
-        new WSSC_Mobile_Admin();
         new WSSC_Ajax();
         new WSSC_SideCart();
         new WSSC_Admin();
+        new WSSC_Mobile_Admin();
     }
     
     public function activate() {
